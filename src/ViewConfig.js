@@ -2,5 +2,8 @@ export const ViewConfig={
     inverted:'inverted',
     BarChart:'BarChart',
     WorldMap:'WorldMap',
-    DataTable:'DataTable'
+    DataTable:'DataTable',
+    probability:'Probability',
+    combination:'Combination'
+
 }

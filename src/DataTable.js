@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import './App.css';
-import { emissionData } from './emissionData.js'
+
 import { select } from 'd3-selection';
 
 class DataTable extends Component {
@@ -15,25 +15,12 @@ class DataTable extends Component {
         console.log("running Constructor");
         var data = {};
         if (!this.props.data) {
-            data = emissionData.emissionData;
+          console.error("No data in props ", props);
         } else {
             data = this.props.data;
         }
 
-        data = data.map(entry => {
-            var startDate = new Date(entry.start).toISOString ();
-            var endDate = new Date(entry.end).toISOString ();
-
-            console.log("date", new Date(entry.start));
-            return {
-                'StartDate': startDate,
-                'endDate': endDate,
-                'Reason': entry.reason,
-                'Start': entry.start,
-                'End': entry.end
-
-            }
-        });
+        ;
 
         this.state = { data: data, rows: {}, sortAscending: true };
 

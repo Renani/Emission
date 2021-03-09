@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import BarChart from './BarChart.js';
 import WorldMap from './WorldMap.js';
@@ -7,18 +6,15 @@ import 'semantic-ui-css/semantic.min.css'
 import { ViewConfig } from './ViewConfig'
 import DataTable from './DataTable.js';
 import {
-  Checkbox,
   Grid,
-  Header,
-  Icon,
-  Image,
   Menu,
   Segment,
   Sidebar,
-  Button,
-  SidebarPusher,
-  List
+  Container
 } from 'semantic-ui-react'
+import CommonCause from './CommonCause';
+import BeautifyData from './emission/BeautifyData'
+import { emissionData } from './emissionData.js'
 
 
 class App extends React.Component {
@@ -26,20 +22,35 @@ class App extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { activeItem: ViewConfig.BarChart, sidebarButtonToggleState: true };
+
+    var data = emissionData.emissionData;
+
+    this.state = { activeItem:{}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data) };
+
   }
 
   handleItemClick = (e, { name }) => this.setState({ activeItem: name })
 
   render() {
     const { activeItem } = this.state;
+    let content=<Container>Nothing selected yet</Container>;
+
+    console.log("activeItem chosen " +(activeItem === ViewConfig.probability), activeItem);
     if (activeItem === ViewConfig.BarChart)
-      var content = <BarChart data={[5, 10, 1, 3]} size={[2000, 500]} />;
+      content = <BarChart data={[5, 10, 1, 3]} size={[2000, 500]} />;
     else if (activeItem === ViewConfig.WorldMap) {
-      var content = <WorldMap></WorldMap>
+      content = <WorldMap></WorldMap>
     } else if (activeItem === ViewConfig.DataTable) {
-      var content = <DataTable></DataTable>
+
+      content = <DataTable data={this.state.data}></DataTable>
+    } else if (activeItem === ViewConfig.probability) {
+      console.log("yoohoo");
+      content = <CommonCause mode={ViewConfig.probability}  ></CommonCause>
+    } else if (activeItem === ViewConfig.combination) {
+      content = <CommonCause mode={ViewConfig.combination}></CommonCause>
     }
+
+
     return (
       <div>
         <Grid columns={1}>
@@ -72,11 +83,24 @@ class App extends React.Component {
                     active={activeItem === ViewConfig.DataTable}
                     onClick={this.handleItemClick}
                   />
+
+                  <Menu.Item
+                    name='Probability'
+                    active={activeItem === ViewConfig.probability}
+                    onClick={this.handleItemClick}
+                  />
+
+
+                  <Menu.Item
+                    name='Combination'
+                    active={activeItem === ViewConfig.combination}
+                    onClick={this.handleItemClick}
+                  />
                 </Menu>
               </Sidebar>
 
               <Sidebar.Pusher className="pusher">
-                <Segment basic style={{ minHeight: 200, maxheight:500 }}>
+                <Segment basic style={{ minHeight: 200, maxheight: 500 }}>
                   <div className='App-header'>
                     <h2>Emission</h2>
 
