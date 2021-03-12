@@ -15,6 +15,7 @@ export default class Analytics {
 
             if (!(key in obj)) {
                 console.error("Wrong key used " + key, obj);
+                return undefined;
             }
 
             let count = 1;
@@ -49,11 +50,11 @@ export default class Analytics {
         let start = "start";
         let end = "end";
         
-        let newSet = [];
+      /*  let newSet = [];
         for(let index in data){
             let entry = data[index];
             let timeSpan = (entry[end] - entry[start]);
-            let newEntry = JSON.parseJson(JSON.stringify(entry));
+            let newEntry = JSON.parse(JSON.stringify(entry));
             if (pretty) {
                 let seconds = parseInt((timeSpan / 1000) % 60);
                 let minutes = Math.floor((timeSpan / (1000 * 60)) % 60);
@@ -63,9 +64,9 @@ export default class Analytics {
             }
             newEntry["_timeSpan"] = timeSpan;
             newSet.push(entry);
-        }
+        }*/
 
-   /*     let newSet = data.map(entry => {
+        let newSet = data.map(entry => {
             let timeSpan = (entry[end] - entry[start]);
             if (pretty) {
                 let seconds = parseInt((timeSpan / 1000) % 60);
@@ -76,7 +77,7 @@ export default class Analytics {
             }
             entry["_timeSpan"] = timeSpan;
             return entry;
-        });*/
+        });
         return newSet;
     }
     /**
@@ -121,7 +122,6 @@ export default class Analytics {
       let freqMap = freqArr.reduce(function (map, obj) {
                 obj[insideReachKey] = {};
                 map[obj[key]] = obj;
-                console.log("new entry ", map);
                 return map;
             }, {});
 

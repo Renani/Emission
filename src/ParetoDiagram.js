@@ -3,23 +3,50 @@ import './App.css';
 import Analytics from './Analytics'
 import { select } from 'd3-selection';
 import { scaleBand, scaleLinear } from 'd3-scale';
-import { axisBottom, axisLeft } from 'd3-axis';
+import { axisBottom, axisLeft, axisRight } from 'd3-axis';
 import { extent, max, min, range } from "d3-array";
-import {line  } from "d3-shape"
+import { line } from "d3-shape"
 
 class ParetoDragram extends Component {
     constructor(props) {
         super(props)
         this.createHistogram = this.createHistogram.bind(this)
         let data = Analytics.findFrequency(this.props.data, "reason");
-        data = Analytics.sortData(data, "count", Analytics.sortDirection.Desc);
 
-      //  let graphData = Analytics.findLongest(this.props.data, false);
-    
-      //  console.log("data after sort", graphData);
+        let graphData = Analytics.findLongest(this.props.data, false);
 
-        this.state = { data: data };
+        console.log("graphData", graphData);
+        //sum up timespan and  group them
+
+        let totalDurations = graphData.reduce((map, obj) => {
+
+            let existing = map[obj["reason"]];
+            let sum = obj["_timeSpan"];
+            if (existing) {
+                sum = existing['TotalDuration'];
+                sum += obj["_timeSpan"];
+
+            } else {
+                existing = obj;
+            }
+
+            existing["TotalDuration"] = sum;
+            map[existing["reason"]] = existing;
+            return map;
+        });
+
+        for (let d in data) {
+            let key = data[d]["reason"];
+            let duration = totalDurations[key];
+            data[d]["TotalDuration"] = duration["TotalDuration"] / (1000 );
+        }
+        data = Analytics.sortData(data, "TotalDuration", Analytics.sortDirection.Desc);
+
+        console.log("data after sort", totalDurations);
+
+        this.state = { data: data, graphData: data };
     }
+
 
 
     componentDidMount() {
@@ -39,6 +66,9 @@ class ParetoDragram extends Component {
         const margin = this.props.margin;
         const height = this.props.height;
         const width = this.props.width;
+        const key = "reason";
+        const durationKey = "TotalDuration";
+        const barWidth=50;
 
         //Creating Axis
         let rangeXScale = [margin.left, width - margin.right];
@@ -49,20 +79,45 @@ class ParetoDragram extends Component {
             .range(rangeXScale)
             .padding(0.1);
 
+        const currentBarWidth = x.bandwidth()>barWidth?barWidth:x.bandwidth();
+
+        //manipulates the range of axis to create a divider between them. Consider instead inrease the domain 
+        let dividerSpace = 0;
         let domainScale = [0, max(this.state.data, d => d.count)];
-        let rangeScale = [height - margin.bottom, margin.top];
-        console.log("y range", rangeScale);
+        let rangeScale = [height - margin.bottom, dividerSpace + margin.top];
 
         let y = scaleLinear().domain(domainScale).range(rangeScale);
         let xAxisTranslate = "translate(0," + (height - margin.bottom) + ")";
-        console.log("xAxisTranslate", xAxisTranslate);
 
         let xAxis = g => g.attr("transform", xAxisTranslate).call(axisBottom(x).tickSizeOuter(0));
 
         let yAxis = g => g.attr("transform", 'translate(' + margin.left + ',0)').call(axisLeft(y)).call(g => g.select(".domain").remove());
 
+
         //Main
+
+
         let svg = select(this.node);
+
+
+
+        let graphDomain = [0, max(this.state.graphData, d => d.TotalDuration)];
+        let graphRange = [height - margin.bottom, margin.top];
+
+        //   let graphRange = rangeScale;
+        console.log("y range", graphRange);
+        console.log("y domain margin", margin);
+        console.log("y domain height", height);
+        console.log("y domain ", graphDomain);
+
+        let yGraphy = scaleLinear().domain(graphDomain).range(graphRange);
+        console.log("yGraphy axis func", yGraphy);
+        let yRightAxis = g => g.attr("transform", 'translate(' + 0 + ',0)').call(axisRight(yGraphy)).call(g => g.select(".domain").remove());
+        console.log("right y", yRightAxis);
+        svg.append("g")
+            .attr("class", "y-axis")
+            .call(yRightAxis);
+
 
         svg.append("g")
             .attr("class", "bars")
@@ -70,49 +125,68 @@ class ParetoDragram extends Component {
             .selectAll("rect")
             .data(this.state.data)
             .join("rect")
-            .attr("x", (d) => { console.log("calculcated x", d); return x(d.reason) })
+            .attr("x", (d) => { return x(d.reason) })
             .attr("y", d => y(d.count))
             .attr("height", (d) => {
                 let calcHeight = y(0) - y(d.count);
-
                 return calcHeight;
             })
-            .attr("width", x.bandwidth());
+            .attr("width",currentBarWidth);
 
         console.log("x function ", x);
         svg.append("g")
             .attr("class", "x-axis")
-            .call(xAxis);
+            .call(xAxis)
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".3em")
+            .attr("transform", function (d) {
+                return "rotate(-65)"
+            });
+
 
         svg.append("g")
             .attr("class", "y-axis")
             .call(yAxis);
 
-            svg.append("linearGradient")
+
+
+        svg.append("linearGradient")
             .attr("id", "line-gradient")
             .attr("gradientUnits", "userSpaceOnUse")
             .attr("x1", 0)
-            .attr("y1", y(0))
+            .attr("y1", yGraphy(0))
             .attr("x2", 0)
-            .attr("y2", y(max))
+            .attr("y2", yGraphy(max))
             .selectAll("stop")
-              .data([
-                {offset: "0%", color: "blue"},
-                {offset: "100%", color: "red"}
-              ])
+            .data([
+                { offset: "0%", color: "blue" },
+                { offset: "100%", color: "red" }
+            ])
             .enter().append("stop")
-              .attr("offset", function(d) { return d.offset; })
-              .attr("stop-color", function(d) { return d.color; });
+            .attr("offset", function (d) { return d.offset; })
+            .attr("stop-color", function (d) { return d.color; });
 
-              svg.append("path")
-              .datum(this.state.data)
-              .attr("fill", "none")
-              .attr("stroke", "url(#line-gradient)" )
-              .attr("stroke-width", 2)
-              .attr("d",line()
-                .x(function(d) { return x(d.reason) })
-                .y(function(d) { return y(d.count) })
-                )
+
+
+        svg.append("path")
+            .datum(this.state.graphData)
+            .attr("fill", "none")
+            .attr("stroke", "url(#line-gradient)")
+            .attr("stroke-width", 3)
+            .attr("d", line()
+                .x(function (d) { let posx = x(d[key]) + x.bandwidth() / 2; return posx })
+                .y(function (d) { return yGraphy(d[durationKey]) })
+            )
+
+        svg.append("g").selectAll("circle")
+            .data(this.state.graphData).join("circle")
+            .attr("fill", "url(#line-gradient)")
+            .attr("stroke", "url(#line-gradient)")
+            .attr("r", 10)
+            .attr("cx", function (d) { let posx = x(d[key]) + x.bandwidth() / 2;; return posx })
+            .attr("cy", function (d) { return yGraphy(d[durationKey]) });
 
 
         console.log("x Func", x);
