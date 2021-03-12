@@ -12,7 +12,12 @@ class ParetoDragram extends Component {
         super(props)
         this.createHistogram = this.createHistogram.bind(this)
         let data = Analytics.findFrequency(this.props.data, "reason");
-        data = Analytics.sortData(data, "count");
+        data = Analytics.sortData(data, "count", Analytics.sortDirection.Desc);
+
+      //  let graphData = Analytics.findLongest(this.props.data, false);
+    
+      //  console.log("data after sort", graphData);
+
         this.state = { data: data };
     }
 

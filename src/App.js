@@ -56,7 +56,7 @@ class App extends React.Component {
       content = <BasicCause ></BasicCause>
     } else if (activeItem === ViewConfig.ParetoDiagram) {
       console.log("content is ", content); console.log("content is ", content);
-      content = <ParetoDragiam data={emissionData.emissionData} margin={{top: 20, right: 0, bottom: 30, left: 40}} width={1000} height={800}></ParetoDragiam>
+      content = <ParetoDragiam data={emissionData.emissionData} margin={{top: 20, right: 0, bottom: 30, left: 200}} width={1000} height={800}></ParetoDragiam>
     }
 
 

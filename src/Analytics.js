@@ -1,6 +1,10 @@
 import * as ss from 'simple-statistics';
 
 export default class Analytics {
+    static sortDirection = {
+        asc: 1,
+        Desc: 0
+    };
 
     static findFrequency(data, key) {
         let dataMap = {};
@@ -37,14 +41,31 @@ export default class Analytics {
     }
     /**
      * 
-     * @param {start,end,*} data 
+     * @param [{start,end,*}] data 
      * @param {boolean} pretty 
-     * @returns 
+     * @returns {_timeSpan:end-start}
      */
     static findLongest(data, pretty) {
         let start = "start";
         let end = "end";
-        data = data.map(entry => {
+        
+        let newSet = [];
+        for(let index in data){
+            let entry = data[index];
+            let timeSpan = (entry[end] - entry[start]);
+            let newEntry = JSON.parseJson(JSON.stringify(entry));
+            if (pretty) {
+                let seconds = parseInt((timeSpan / 1000) % 60);
+                let minutes = Math.floor((timeSpan / (1000 * 60)) % 60);
+                let hours = Math.floor((timeSpan / (1000 * 60 * 60)) % 60);
+                let days = Math.floor((timeSpan / (1000 * 60 * 60 * 24)) % 24);
+                newEntry["Duration"] = days + "d, " + hours + "h, " + minutes + "m and " + seconds + "s";
+            }
+            newEntry["_timeSpan"] = timeSpan;
+            newSet.push(entry);
+        }
+
+   /*     let newSet = data.map(entry => {
             let timeSpan = (entry[end] - entry[start]);
             if (pretty) {
                 let seconds = parseInt((timeSpan / 1000) % 60);
@@ -53,10 +74,10 @@ export default class Analytics {
                 let days = Math.floor((timeSpan / (1000 * 60 * 60 * 24)) % 24);
                 entry["Duration"] = days + "d, " + hours + "h, " + minutes + "m and " + seconds + "s";
             }
-            entry["timeSpan"] = timeSpan;
+            entry["_timeSpan"] = timeSpan;
             return entry;
-        });
-        return data;
+        });*/
+        return newSet;
     }
     /**
      * 
@@ -71,7 +92,7 @@ export default class Analytics {
         //Identifisert neste element (EL2) i liste,lag en array B ut av det og antall ganger det skjer.
         //for hvert element i array B, del antall ganger det skjer på frekvensen på EL1.
         const start = "start";
-        const sorted = this.sortData(data, start);
+        const sorted = this.sortData(data, start, this.sortDirection.asc);
         const timeGapKey = 'timeGap';
 
         const dependencyCount = "dependencyCount";
@@ -94,14 +115,17 @@ export default class Analytics {
 
         console.log("data with gap ", sorted);
 
-        let freqMap = this.findFrequency(sorted, key);
-    /**   freqMap = freqMap.reduce(function (map, obj) {
-            obj[insideReachKey] = {};
-            map[obj.key] = obj;
-            return map;
-        }, {});*/
+        let freqArr = this.findFrequency(sorted, key);
+//        console.log("frequencyMap before reduce", freqArr);
+        //Convert from Array to HashMap structure
+      let freqMap = freqArr.reduce(function (map, obj) {
+                obj[insideReachKey] = {};
+                map[obj[key]] = obj;
+                console.log("new entry ", map);
+                return map;
+            }, {});
 
-        console.log("frequencyMap", freqMap);
+//        console.log("frequencyMap after reduce", freqMap);
 
         for (let j = 0; j < sorted.length; j++) {
             j = parseInt(j);
@@ -134,7 +158,7 @@ export default class Analytics {
                 } catch (e) {
                     console.log("key ", (key));
                     console.log("Exception ", e);
-                    console.log("freqMap entry ", freqMap);
+                    console.log("freqMap entry ", entry);
                 }
             }
         }
@@ -164,8 +188,8 @@ export default class Analytics {
 
         console.log("frequency", freqMap);
 
-
         return frequencies;
+ 
     }
 
     static findCombination(data, key) {
@@ -189,9 +213,18 @@ export default class Analytics {
 
         return freq;
     }
-
-    static sortData(data, key) {
-        return data.sort((a, b) => { return data[a] < data[b] });
+    /**
+     * 
+     * @param {key:number value} data 
+     * @param {*} key 
+     * @param {sortDirection} sortDirection 
+     * @returns 
+     */
+    static sortData(data, key, sortDirection) {
+        if (sortDirection === this.sortDirection.asc)
+            return data.sort((a, b) => { return a[key] < b[key] });
+        else if (sortDirection === this.sortDirection.Desc)
+            return data.sort((a, b) => { return a[key] > b[key] });
     }
 
 }
