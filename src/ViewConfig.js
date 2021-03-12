@@ -4,6 +4,7 @@ export const ViewConfig={
     WorldMap:'WorldMap',
     DataTable:'DataTable',
     probability:'Probability',
-    combination:'Combination'
-
+    combination:'Combination',
+    basicCause:"basicCause",
+    ParetoDiagram:"ParetoDiagram"
 }

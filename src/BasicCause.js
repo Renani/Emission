@@ -5,40 +5,29 @@ import Analytics from './Analytics'
 import { Card, Feed, Container } from 'semantic-ui-react'
 import DataTable from './DataTable';
 import { ViewConfig } from './ViewConfig';
-class CommonCause extends Component {
+class BasicCause extends Component {
     constructor(props) {
         super(props);
 
         console.log("running Constructor");
 
 
-        var data = {};
+        let data = {};
         if (!this.props.data) {
             data = emissionData.emissionData;
         } else {
             data = this.props.data;
+
         }
+        const hour =  3600000;
+        const reach = 3600000*24*3;
+        data =  Analytics.findlikeliestCause(data, reach,"reason");
+        this.state = { data: data };
 
-        switch (this.props.mode) {
-            case ViewConfig.probability:
-                let newSet = Analytics.findFrequency(data, "reason");
-                this.state = { data: newSet };
-                break;
-            case ViewConfig.combination:
-                let newSet2 = Analytics.findCombination(data, "reason");
-                this.state = { data: newSet2 };
-                break;
-        }
 
     }
 
-    componentDidMount() {
-
-    }
-    componentDidUpdate() {
-
-    }
-
+ 
     render() {
         return (
             <Container>
@@ -51,4 +40,4 @@ class CommonCause extends Component {
     }
 };
 
-export default CommonCause;
+export default BasicCause;

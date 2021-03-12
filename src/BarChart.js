@@ -23,19 +23,19 @@ class BarChart extends Component {
          .domain([0, dataMax])
          .range([0, this.props.size[1]])
 
-      select(node)
+         select(node)
          .selectAll('rect')
          .data(this.props.data)
          .enter()
          .append('rect')
 
-      select(node)
+         select(node)
          .selectAll('rect')
          .data(this.props.data)
          .exit()
          .remove()
 
-      select(node)
+         select(node)
          .selectAll('rect')
          .data(this.props.data)
          .style('fill', '#fe9922')

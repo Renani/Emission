@@ -12,10 +12,13 @@ import {
   Sidebar,
   Container
 } from 'semantic-ui-react'
-import CommonCause from './CommonCause';
+
 import BeautifyData from './emission/BeautifyData'
 import { emissionData } from './emissionData.js'
-
+import SimpleProbability from './SimpleProbability';
+import Combination from './Combination';
+import BasicCause from './BasicCause';
+import ParetoDragiam from './ParetoDiagram';
 
 class App extends React.Component {
 
@@ -25,29 +28,35 @@ class App extends React.Component {
 
     var data = emissionData.emissionData;
 
-    this.state = { activeItem:{}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data) };
+    this.state = { activeItem: {}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data) };
 
   }
 
-  handleItemClick = (e, { name }) => this.setState({ activeItem: name })
+  handleItemClick = (e, { name }) => {
+    this.setState({ activeItem: name })
+  }
 
   render() {
     const { activeItem } = this.state;
-    let content=<Container>Nothing selected yet</Container>;
+    let content = <Container>Nothing selected yet</Container>;
 
-    console.log("activeItem chosen " +(activeItem === ViewConfig.probability), activeItem);
+    console.log("activeItem chosen " + ViewConfig.ParetoDiagram, activeItem);
+    
     if (activeItem === ViewConfig.BarChart)
-      content = <BarChart data={[5, 10, 1, 3]} size={[2000, 500]} />;
+      content = <BarChart data={[5, 10, 1, 3, 3, 2, 5, 2, 7]} size={[2000, 500]} />;
     else if (activeItem === ViewConfig.WorldMap) {
       content = <WorldMap></WorldMap>
     } else if (activeItem === ViewConfig.DataTable) {
-
       content = <DataTable data={this.state.data}></DataTable>
     } else if (activeItem === ViewConfig.probability) {
-      console.log("yoohoo");
-      content = <CommonCause mode={ViewConfig.probability}  ></CommonCause>
+      content = <SimpleProbability   ></SimpleProbability>
     } else if (activeItem === ViewConfig.combination) {
-      content = <CommonCause mode={ViewConfig.combination}></CommonCause>
+      content = <Combination></Combination>
+    } else if (activeItem === ViewConfig.basicCause) {
+      content = <BasicCause ></BasicCause>
+    } else if (activeItem === ViewConfig.ParetoDiagram) {
+      console.log("content is ", content); console.log("content is ", content);
+      content = <ParetoDragiam data={emissionData.emissionData} margin={{top: 20, right: 0, bottom: 30, left: 40}} width={1000} height={800}></ParetoDragiam>
     }
 
 
@@ -96,6 +105,18 @@ class App extends React.Component {
                     active={activeItem === ViewConfig.combination}
                     onClick={this.handleItemClick}
                   />
+
+                  <Menu.Item
+                    name='basicCause'
+                    active={activeItem === ViewConfig.basicCause}
+                    onClick={this.handleItemClick}
+                  />
+                  <Menu.Item
+                    name='ParetoDiagram'
+                    active={activeItem === ViewConfig.ParetoDiagram}
+                    onClick={this.handleItemClick}
+                  />
+
                 </Menu>
               </Sidebar>
 

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './App.css';
 
 import { select } from 'd3-selection';
+import { thresholdFreedmanDiaconis } from 'd3-array';
 
 class DataTable extends Component {
 
@@ -15,7 +16,7 @@ class DataTable extends Component {
         console.log("running Constructor");
         var data = {};
         if (!this.props.data) {
-          console.error("No data in props ", props);
+            console.error("No data in props ", props);
         } else {
             data = this.props.data;
         }
@@ -45,7 +46,11 @@ class DataTable extends Component {
 
         var table = select(node).append('table');
         console.log("state data at createTable ", this.state)
-        var titles = Object.keys(this.state.data[0]);
+
+        var titles = Object.keys(this.state.data[0]).filter(entry => 
+            !entry.startsWith("_")
+                
+        );
         console.log("Row Headers obtained from data", titles)
 
 
@@ -102,7 +107,7 @@ class DataTable extends Component {
 
     }
 
-     
+
     componentDidMount() {
 
         this.createDataTable();
@@ -114,6 +119,7 @@ class DataTable extends Component {
 
 
     render() {
+
         return (
             <div id="page-wrap" ref={node => this.node = node}>  </div>
         )
