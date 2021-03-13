@@ -50,7 +50,7 @@ export default class Analytics {
         let start = "start";
         let end = "end";
         
-      /*  let newSet = [];
+       let newSet = [];
         for(let index in data){
             let entry = data[index];
             let timeSpan = (entry[end] - entry[start]);
@@ -63,8 +63,9 @@ export default class Analytics {
                 newEntry["Duration"] = days + "d, " + hours + "h, " + minutes + "m and " + seconds + "s";
             }
             newEntry["_timeSpan"] = timeSpan;
-            newSet.push(entry);
-        }*/
+            newSet.push(newEntry);
+        }
+        /*
 
         let newSet = data.map(entry => {
             let timeSpan = (entry[end] - entry[start]);
@@ -78,6 +79,8 @@ export default class Analytics {
             entry["_timeSpan"] = timeSpan;
             return entry;
         });
+        */
+       console.log("newSet ", newSet);
         return newSet;
     }
     /**
@@ -173,7 +176,7 @@ export default class Analytics {
                 let count = depArr[dep][dependencyCount]
                 total = total + count;
             }
-            console.log("caculating probability ", depArr);
+            
             var depString = "";
             for (let dep in depArr) {
                 let count = depArr[dep][dependencyCount]

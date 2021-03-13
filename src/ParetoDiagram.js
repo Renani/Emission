@@ -12,9 +12,9 @@ class ParetoDragram extends Component {
         super(props)
         this.createHistogram = this.createHistogram.bind(this)
         let data = Analytics.findFrequency(this.props.data, "reason");
-
+        console.log("Data", this.props.data);
         let graphData = Analytics.findLongest(this.props.data, false);
-
+        
         console.log("graphData", graphData);
         //sum up timespan and  group them
 
@@ -38,13 +38,13 @@ class ParetoDragram extends Component {
         for (let d in data) {
             let key = data[d]["reason"];
             let duration = totalDurations[key];
-            data[d]["TotalDuration"] = duration["TotalDuration"] / (1000 );
+            data[d]["TotalDuration"] = duration["TotalDuration"] / (1000);
         }
-        data = Analytics.sortData(data, "TotalDuration", Analytics.sortDirection.Desc);
+        let sorted = Analytics.sortData(data, "TotalDuration", Analytics.sortDirection.Desc);
 
-        console.log("data after sort", totalDurations);
+        console.log("data after sort", sorted);
 
-        this.state = { data: data, graphData: data };
+        this.state = { data: data, graphData: sorted };
     }
 
 
@@ -68,7 +68,7 @@ class ParetoDragram extends Component {
         const width = this.props.width;
         const key = "reason";
         const durationKey = "TotalDuration";
-        const barWidth=50;
+        const barWidth = 50;
 
         //Creating Axis
         let rangeXScale = [margin.left, width - margin.right];
@@ -79,7 +79,7 @@ class ParetoDragram extends Component {
             .range(rangeXScale)
             .padding(0.1);
 
-        const currentBarWidth = x.bandwidth()>barWidth?barWidth:x.bandwidth();
+        const currentBarWidth = x.bandwidth() > barWidth ? barWidth : x.bandwidth();
 
         //manipulates the range of axis to create a divider between them. Consider instead inrease the domain 
         let dividerSpace = 0;
@@ -105,10 +105,7 @@ class ParetoDragram extends Component {
         let graphRange = [height - margin.bottom, margin.top];
 
         //   let graphRange = rangeScale;
-        console.log("y range", graphRange);
-        console.log("y domain margin", margin);
-        console.log("y domain height", height);
-        console.log("y domain ", graphDomain);
+
 
         let yGraphy = scaleLinear().domain(graphDomain).range(graphRange);
         console.log("yGraphy axis func", yGraphy);
@@ -131,7 +128,8 @@ class ParetoDragram extends Component {
                 let calcHeight = y(0) - y(d.count);
                 return calcHeight;
             })
-            .attr("width",currentBarWidth);
+            
+            .attr("width", currentBarWidth);
 
         console.log("x function ", x);
         svg.append("g")
@@ -176,7 +174,7 @@ class ParetoDragram extends Component {
             .attr("stroke", "url(#line-gradient)")
             .attr("stroke-width", 3)
             .attr("d", line()
-                .x(function (d) { let posx = x(d[key]) + x.bandwidth() / 2; return posx })
+                .x(function (d) { let posx = x(d[key]) + currentBarWidth/ 2; return posx })
                 .y(function (d) { return yGraphy(d[durationKey]) })
             )
 
@@ -185,7 +183,7 @@ class ParetoDragram extends Component {
             .attr("fill", "url(#line-gradient)")
             .attr("stroke", "url(#line-gradient)")
             .attr("r", 10)
-            .attr("cx", function (d) { let posx = x(d[key]) + x.bandwidth() / 2;; return posx })
+            .attr("cx", function (d) { let posx = x(d[key]) +currentBarWidth / 2;; return posx })
             .attr("cy", function (d) { return yGraphy(d[durationKey]) });
 
 
