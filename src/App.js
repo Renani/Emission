@@ -56,7 +56,9 @@ class App extends React.Component {
       content = <BasicCause ></BasicCause>
     } else if (activeItem === ViewConfig.ParetoDiagram) {
       console.log("content is ", content); console.log("content is ", content);
-      content = <ParetoDragiam data={emissionData.emissionData} margin={{top: 20, right: 0, bottom: 150, left: 100}} width={1000} height={800}></ParetoDragiam>
+      const hour =  3600000;
+      const reach = 3600000*24*3; //setting rootcause to be calculcated based on 3 days
+      content = <ParetoDragiam data={emissionData.emissionData} margin={{top: 50, right: 0, bottom: 150, left: 100}} width={1500} height={1000} reach={reach}></ParetoDragiam>
     }
 
 
