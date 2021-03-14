@@ -17,7 +17,7 @@ class ParetoDragram extends Component {
 
         let data = Analytics.findCountAndProbability(this.props.data, "reason");
 
-        let graphData = Analytics.findLongest(this.props.data, false);
+        let graphData = Analytics.findLongest(this.props.data,(d)=>d.start, (d)=>d.end, false);
 
         console.log("graphData", graphData);
         //sum up timespan and  group them
@@ -28,16 +28,19 @@ class ParetoDragram extends Component {
             let sum = obj["_timeSpan"];
             if (existing) {
                 sum = existing['TotalDuration'];
+                console.log("Increasing sum " + existing["reason"], [sum, obj["_timeSpan"]/1000]);
                 sum += obj["_timeSpan"];
+                
 
             } else {
                 existing = obj;
+                
             }
-
+            
             existing["TotalDuration"] = sum;
             map[existing["reason"]] = existing;
             return map;
-        });
+        },{});
 
 
 
@@ -45,26 +48,33 @@ class ParetoDragram extends Component {
         let probab = Analytics.findlikeliestCause(JSON.parse(JSON.stringify(this.props.data)), this.props.reach, "reason");
         console.log("prob array ", probab);
 
-        let frequencyPerPeriod = Analytics.findFrequencyPerPeriod(this.props.data, (d)=>d.Start, this.props.reach, (d)=>d.Reason);
+        let frequencyOut = Analytics.findFrequencyPerPeriod(this.props.data, (d)=>d.start, this.props.reach, (d)=>d.reason);
+        let frequencyPerPeriod = frequencyOut[0]
+        let getFrequency = frequencyOut[1];
+        let frequency_key = frequencyOut[2];
         console.log("frequencyPerPeriod", frequencyPerPeriod);
 
         for (let d in data) {
             let key = data[d]["reason"];
             let duration = totalDurations[key];
-            data[d]["TotalDuration"] = duration["TotalDuration"] / (1000);
+            data[d]["TotalDuration"] = duration["TotalDuration"] / 1000;
             //  let dependent = probab[key]["_innerReach"];
             let rootCause= probab.find(el=>el["reason"]===key);
             data[d]["totalDependencyTime"] = rootCause["totalDependencyTime"];
             data[d]["weight"] = rootCause["weight"];
+            data[d][frequency_key] = getFrequency(frequencyPerPeriod[key]);
 
         }
+        console.log("frequency key ", frequency_key)
+        let sorted =  Analytics.sortData(data, frequency_key, Analytics.sortDirection.Desc);
 
-        let sorted = Analytics.sortData(data, "TotalDuration", Analytics.sortDirection.Desc);
+        //let sorted = data.sort((a,b) =>{ console.log(" sort algorithm", frequency_key); return a[frequency_key] < b[frequency_key];});
         console.log("Probability ", probab);
+        console.log("Sorted  ", sorted);
         console.log("Final data ", data);
 
 
-        this.state = { data: data, graphData: sorted, dataProbabilty: probab };
+        this.state = { data: sorted  ,  getAverageFrequency:(d)=>d[frequency_key] };
     }
 
 
@@ -102,7 +112,7 @@ class ParetoDragram extends Component {
 
         //manipulates the range of axis to create a divider between them. Consider instead inrease the domain 
         let dividerSpace = 0;
-        let domainScale = [0, max(this.state.data, d => d.count)];
+        let domainScale = [0, max(this.state.data, d => d.TotalDuration)];
         let rangeScale = [height - margin.bottom, dividerSpace + margin.top];
 
         let y = scaleLinear().domain(domainScale).range(rangeScale);
@@ -130,9 +140,9 @@ class ParetoDragram extends Component {
             .data(this.state.data)
             .join("rect")
             .attr("x", (d) => { return x(d.reason) })
-            .attr("y", d => y(d.count))
+            .attr("y", d => y(d.TotalDuration))
             .attr("height", (d) => {
-                let calcHeight = y(0) - y(d.count);
+                let calcHeight = y(0) - y(d.TotalDuration);
                 return calcHeight;
             })
             .attr("fill",  (d)=>{ 
@@ -160,6 +170,14 @@ class ParetoDragram extends Component {
             .attr("font-size", "1.4em")
             .attr("font-family", 'Times New Roman');
 
+            svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left)
+            .attr("x",0 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Duration");      
+
         this.createlineGraph(x, currentBarWidth);
         
     }
@@ -172,10 +190,11 @@ class ParetoDragram extends Component {
         const height = this.props.height;
         const key = "reason";
         const durationKey = "TotalDuration";
+        const getAverageFrequency = this.state.getAverageFrequency;
 
         let svg = select(this.node);
 
-        let graphDomain = [0, max(this.state.graphData, d => d.TotalDuration)];
+        let graphDomain = [0, max(this.state.data,(d)=> getAverageFrequency(d))];
         let graphRange = [height - margin.bottom, margin.top];
 
         //   let graphRange = rangeScale;
@@ -210,22 +229,22 @@ class ParetoDragram extends Component {
 
 
         svg.append("path")
-            .datum(this.state.graphData)
+            .datum(this.state.data)
             .attr("fill", "none")
             .attr("stroke", "url(#line-gradient)")
             .attr("stroke-width", 3)
             .attr("d", line()
                 .x(function (d) { let posx = x(d[key]) + currentBarWidth / 2; return posx })
-                .y(function (d) { return yGraphy(d[durationKey]) })
+                .y(function (d) { return yGraphy(getAverageFrequency(d)) })
             )
 
         svg.append("g").selectAll("circle")
-            .data(this.state.graphData).join("circle")
+            .data(this.state.data).join("circle")
             .attr("fill", "url(#line-gradient)")
             .attr("stroke", "url(#line-gradient)")
             .attr("r", 10)
             .attr("cx", function (d) { let posx = x(d[key]) + currentBarWidth / 2;; return posx })
-            .attr("cy", function (d) { return yGraphy(d[durationKey]) })
+            .attr("cy", function (d) { return yGraphy(getAverageFrequency(d)) })
             .on("click", this.props.onClick);
     }
 

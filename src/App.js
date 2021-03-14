@@ -20,19 +20,20 @@ import SimpleProbability from './SimpleProbability';
 import Combination from './Combination';
 import BasicCause from './BasicCause';
 import ParetoDragiam from './ParetoDiagram';
-import {Period} from './Period.js';
+import { Period } from './Period.js';
 import Analytics from './Analytics';
+import Longest from './longest';
 
 class App extends React.Component {
-  
-  
+
+
 
   constructor(props) {
     super(props);
 
     var data = emissionData.emissionData;
 
-    this.state = { activeItem: {}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data), chosenSelection:undefined };
+    this.state = { activeItem: {}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data), chosenSelection: undefined };
 
   }
 
@@ -45,15 +46,14 @@ class App extends React.Component {
   render() {
     const { activeItem } = this.state;
     let content = <Container>Nothing selected yet</Container>;
-    
-    const reach = Period.Day*3; //setting rootcause to be calculcated based on 3 days
+
+    const reach = Period.Day * 3; //setting rootcause to be calculcated based on 3 days
 
     console.log("activeItem chosen " + ViewConfig.ParetoDiagram, activeItem);
-    
-    if (activeItem === ViewConfig.BarChart)
-    {
-  //    let frequency =  Analytics.findFrequencyPerPeriod(this.state.data,(d)=>{ return d.Start;} , Period.Day*7, (d)=>{ return d.Reason})
-      content = <BarChart data={[10,4,1,3,5]} dataCallBack ={(d)=>d.length}  size={[1000, 1000]} />;
+
+    if (activeItem === ViewConfig.BarChart) {
+      //    let frequency =  Analytics.findFrequencyPerPeriod(this.state.data,(d)=>{ return d.Start;} , Period.Day*7, (d)=>{ return d.Reason})
+      content = <BarChart data={[10, 4, 1, 3, 5]} dataCallBack={(d) => d.length} size={[1000, 1000]} />;
     }
     else if (activeItem === ViewConfig.WorldMap) {
       content = <WorldMap></WorldMap>
@@ -68,20 +68,22 @@ class App extends React.Component {
     } else if (activeItem === ViewConfig.ParetoDiagram) {
       const self = this;
       function handleMouseOver2(d, i) {  // Add interactivity
-    
+
         self.setState(i);
-        console.log("yoho");
-    }
-      content =<Container><ParetoDragiam data={emissionData.emissionData} margin={{top: 50, right: 0, bottom: 150, left: 150}} width={1000} height={1000} reach={reach} onClick={handleMouseOver2}></ParetoDragiam></Container> 
+     
+      }
+      content = <Container><ParetoDragiam data={emissionData.emissionData} margin={{ top: 50, right: 0, bottom: 150, left: 150 }} width={1000} height={1000} reach={reach} onClick={handleMouseOver2}></ParetoDragiam></Container>
+    }else if (activeItem === ViewConfig.LongestEntry){
+      content = <Longest data={this.state.data}></Longest>
     }
 
 
     return (
       <div>
-           <div className='App-header'>
-                    <h2>Emission</h2>   
+        <div className='App-header'>
+          <h2>Emission</h2>
 
-                  </div>
+        </div>
         <Grid columns={2}>
 
           <Grid.Column>
@@ -126,6 +128,13 @@ class App extends React.Component {
                     onClick={this.handleItemClick}
                   />
 
+
+                  <Menu.Item
+                    name='LongestEntry'
+                    active={activeItem === ViewConfig.LongestEntry}
+                    onClick={this.handleItemClick}
+                  />
+
                   <Menu.Item
                     name='basicCause'
                     active={activeItem === ViewConfig.basicCause}
@@ -142,7 +151,7 @@ class App extends React.Component {
 
               <Sidebar.Pusher className="pusher">
                 <Segment basic style={{ minHeight: 200, maxheight: 500 }}>
-               
+
 
                   <div className='App-body'>
                     {content}
@@ -152,7 +161,7 @@ class App extends React.Component {
             </Sidebar.Pushable>
           </Grid.Column>
           <Grid.Column>
-              <Container>hallais</Container>
+            <Container>hallais</Container>
           </Grid.Column>
         </Grid>
       </div>

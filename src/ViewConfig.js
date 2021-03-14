@@ -5,6 +5,7 @@ export const ViewConfig={
     DataTable:'DataTable',
     probability:'Probability',
     combination:'Combination',
+    LongestEntry:"LongestEntry",
     basicCause:"basicCause",
     ParetoDiagram:"ParetoDiagram"
 }
