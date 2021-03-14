@@ -11,7 +11,8 @@ import {
   Segment,
   Sidebar,
   Container
-} from 'semantic-ui-react'
+} from 'semantic-ui-react';
+import { select } from 'd3-selection';
 
 import BeautifyData from './emission/BeautifyData'
 import { emissionData } from './emissionData.js'
@@ -19,16 +20,19 @@ import SimpleProbability from './SimpleProbability';
 import Combination from './Combination';
 import BasicCause from './BasicCause';
 import ParetoDragiam from './ParetoDiagram';
+import {Period} from './Period.js';
+import Analytics from './Analytics';
 
 class App extends React.Component {
-
+  
+  
 
   constructor(props) {
     super(props);
 
     var data = emissionData.emissionData;
 
-    this.state = { activeItem: {}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data) };
+    this.state = { activeItem: {}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data), chosenSelection:undefined };
 
   }
 
@@ -36,14 +40,21 @@ class App extends React.Component {
     this.setState({ activeItem: name })
   }
 
+
+
   render() {
     const { activeItem } = this.state;
     let content = <Container>Nothing selected yet</Container>;
+    
+    const reach = Period.Day*3; //setting rootcause to be calculcated based on 3 days
 
     console.log("activeItem chosen " + ViewConfig.ParetoDiagram, activeItem);
     
     if (activeItem === ViewConfig.BarChart)
-      content = <BarChart data={[5, 10, 1, 3, 3, 2, 5, 2, 7]} size={[2000, 500]} />;
+    {
+  //    let frequency =  Analytics.findFrequencyPerPeriod(this.state.data,(d)=>{ return d.Start;} , Period.Day*7, (d)=>{ return d.Reason})
+      content = <BarChart data={[10,4,1,3,5]} dataCallBack ={(d)=>d.length}  size={[1000, 1000]} />;
+    }
     else if (activeItem === ViewConfig.WorldMap) {
       content = <WorldMap></WorldMap>
     } else if (activeItem === ViewConfig.DataTable) {
@@ -53,18 +64,25 @@ class App extends React.Component {
     } else if (activeItem === ViewConfig.combination) {
       content = <Combination></Combination>
     } else if (activeItem === ViewConfig.basicCause) {
-      content = <BasicCause ></BasicCause>
+      content = <BasicCause reach={reach}></BasicCause>
     } else if (activeItem === ViewConfig.ParetoDiagram) {
-      console.log("content is ", content); console.log("content is ", content);
-      const hour =  3600000;
-      const reach = 3600000*24*3; //setting rootcause to be calculcated based on 3 days
-      content = <ParetoDragiam data={emissionData.emissionData} margin={{top: 50, right: 0, bottom: 150, left: 100}} width={1500} height={1000} reach={reach}></ParetoDragiam>
+      const self = this;
+      function handleMouseOver2(d, i) {  // Add interactivity
+    
+        self.setState(i);
+        console.log("yoho");
+    }
+      content =<Container><ParetoDragiam data={emissionData.emissionData} margin={{top: 50, right: 0, bottom: 150, left: 150}} width={1000} height={1000} reach={reach} onClick={handleMouseOver2}></ParetoDragiam></Container> 
     }
 
 
     return (
       <div>
-        <Grid columns={1}>
+           <div className='App-header'>
+                    <h2>Emission</h2>   
+
+                  </div>
+        <Grid columns={2}>
 
           <Grid.Column>
             <Sidebar.Pushable as={Segment}>
@@ -124,10 +142,7 @@ class App extends React.Component {
 
               <Sidebar.Pusher className="pusher">
                 <Segment basic style={{ minHeight: 200, maxheight: 500 }}>
-                  <div className='App-header'>
-                    <h2>Emission</h2>
-
-                  </div>
+               
 
                   <div className='App-body'>
                     {content}
@@ -135,6 +150,9 @@ class App extends React.Component {
                 </Segment>
               </Sidebar.Pusher>
             </Sidebar.Pushable>
+          </Grid.Column>
+          <Grid.Column>
+              <Container>hallais</Container>
           </Grid.Column>
         </Grid>
       </div>

@@ -20,7 +20,7 @@ class SimpleProbability extends Component {
 
         }
 
-        data = Analytics.findFrequency(data, "reason");
+        data = Analytics.findCountAndProbability(data, "reason");
         this.state = { data: data };
 
 

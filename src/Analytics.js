@@ -6,7 +6,7 @@ export default class Analytics {
         Desc: 0
     };
 
-    static findFrequency(data, key) {
+    static findCountAndProbability(data, key) {
         let dataMap = {};
 
         for (let index in data) {
@@ -40,6 +40,118 @@ export default class Analytics {
 
         return newSet;
     }
+
+
+    static findCountAndProbabilityWithCallback(data, callBack) {
+        let dataMap = {};
+        
+        for (let index in data) {
+            let obj = {};
+            obj = data[index]; //returns index instead of value
+            let objKey = callBack(obj);
+            let count = 1;
+
+            if (objKey in dataMap) {
+                let old = dataMap[objKey]
+                count = old + 1;
+            }
+
+            dataMap[objKey] = count;
+
+        }
+
+        let length = data.length;
+
+        let newSet = [];
+        for (let keyIndex in dataMap) {
+            let count = dataMap[keyIndex];
+            let prob = count / length;
+            newSet.push({ category: keyIndex, count: count, probability: prob });
+        }
+
+        return [newSet,(d)=>d.category];
+    }
+    /**
+     * 
+     * @param {[key]:key,start:millis,end:millis}} data 
+     * @param {*} key 
+     */
+
+    /**
+     * finds frequency per time unit
+     * @param {d} data 
+     * @param {*} key 
+     */
+    static findFrequencyPerPeriod(data, getStartTime, period, getCategory) {
+      
+        let sorted = JSON.parse(JSON.stringify(data));
+
+        sorted = this.sortData(data, "start", this.sortDirection.Desc);
+
+        const timeGap = this.calculateTimeGapBetween(sorted, getStartTime);
+
+        let groupByPeriod = sorted.reduce((acc, currentValue, index, dataSet) => {
+           
+            
+            let cumulativeGap = acc.cumulativeGap + currentValue[timeGap];
+           
+            if (cumulativeGap > period) {
+                acc.cumulativeGap = 0;
+                acc.periodCounter += 1;
+                acc.entries[acc.periodCounter] = [currentValue];
+                return acc;;
+
+            } else {
+                if (index === 0) {
+                    acc.entries[0] = [currentValue]
+                    return acc;
+                } else {
+                    acc.cumulativeGap =cumulativeGap;
+                     acc.entries[acc.periodCounter].push(currentValue);
+                     return acc;
+                }
+            }
+
+        }, { cumulativeGap: 0, periodCounter: 0, entries: [] });
+        
+        console.log("groupByPeriod ", groupByPeriod);
+        let avgFrequencyPerCategory ={}
+        for (let index in groupByPeriod.entries){
+             
+            let resultArr=  this.findCountAndProbabilityWithCallback(groupByPeriod.entries[index], getCategory);
+            let countArr = resultArr[0];
+            let getEntry = resultArr[1];
+
+            groupByPeriod.entries[index] = countArr;
+        
+
+
+            for (let index in countArr){
+                
+                let currentValue = countArr[index];
+              
+                let objKey =getEntry(currentValue);
+                let existing = avgFrequencyPerCategory[objKey];
+                if(existing){
+                    existing.count +=1;
+          //          console.log("currentValues ", [currentValue.probability, groupByPeriod.entries.length, existing.cumulativeFrequency]);
+                    existing.AverrageFrequency +=(currentValue.probability/groupByPeriod.entries.length);
+                }else{
+                    avgFrequencyPerCategory[objKey] ={AverrageFrequency: currentValue.probability/groupByPeriod.entries.length, count:1}
+                }
+            }
+
+
+        }
+
+        //group the average frequency per period now that you know the count for each period
+          
+        console.log("cumulatives ", avgFrequencyPerCategory);
+        console.log("sorted after reduce ", sorted);
+        console.log("groupByPeriod after reduce ", groupByPeriod);
+        return avgFrequencyPerCategory;
+    }
+
     /**
      * 
      * @param [{start,end,*}] data 
@@ -49,9 +161,9 @@ export default class Analytics {
     static findLongest(data, pretty) {
         let start = "start";
         let end = "end";
-        
-       let newSet = [];
-        for(let index in data){
+
+        let newSet = [];
+        for (let index in data) {
             let entry = data[index];
             let timeSpan = (entry[end] - entry[start]);
             let newEntry = JSON.parse(JSON.stringify(entry));
@@ -80,8 +192,31 @@ export default class Analytics {
             return entry;
         });
         */
-       console.log("newSet ", newSet);
+        console.log("newSet ", newSet);
         return newSet;
+    }
+
+    static calculateTimeGapBetween(data, dataCallBack) {
+        const timeGapKey = 'timeGap';
+         console.log("calculateTimeGapBetween ", data);
+        console.log("calculateTimeGapBetween func ", dataCallBack(data[0]));
+
+
+        for (let index in data) {
+            let entry = data[index];
+            let newEntry = JSON.parse(JSON.stringify(entry));
+            if (index == 0) {
+                newEntry[timeGapKey] = 0;
+            } else {
+                let prevInd = index - 1;
+                let prev = data[prevInd];
+                let timeGap = dataCallBack(newEntry) - dataCallBack(prev);
+
+                newEntry[timeGapKey] = timeGap;
+            }
+            data[index] = newEntry;
+        }
+        return timeGapKey;
     }
     /**
      * 
@@ -91,47 +226,40 @@ export default class Analytics {
      * @returns {_insideReach:[data Entries], }
      */
     static findlikeliestCause(data, reach, key) {
-         console.log("likeliestCauseData", data);
+        console.log("likeliestCauseData", data);
         //gå igjennom hvert element EL1
         //Identifisert neste element (EL2) i liste,lag en array B ut av det og antall ganger det skjer.
         //for hvert element i array B, del antall ganger det skjer på frekvensen på EL1.
         const start = "start";
-        const sorted = JSON.parse(JSON.stringify( this.sortData(data, start, this.sortDirection.asc)));
-        const timeGapKey = 'timeGap';
+        const end = "end";
+        const sorted = JSON.parse(JSON.stringify(this.sortData(data, start, this.sortDirection.Desc)));
+
 
         const dependencyCount = "dependencyCount";
         const insideReachKey = "_insideReach";
         const depdendency_key = "Dependencies";
         const probability_key = "probability";
-        
-        for (let index in sorted) {
-            let entry = sorted[index];
-            let  newEntry = JSON.parse(JSON.stringify(entry));
-            if (index == 0) {
-                newEntry[timeGapKey] = 0;
-            } else {
-                let prevInd = index - 1;
-                
-                let timeGap = newEntry[start] - newEntry[start];
+        const totalTimeSpan = "totalTimespan";
+        const totalDependencyTime = "totalDependencyTime";
+        const weight_key = "weight";
 
-                newEntry[timeGapKey] = timeGap;
-            }
-            sorted[index] = newEntry;
-        }
 
-        
+        //Calculating distance [insert ]
+        const timeGapKey = Analytics.calculateTimeGapBetween(sorted, (d) => { console.log("getting data function has been  called"); return d[start] });
 
-        let freqArr = this.findFrequency(sorted, key);
-//        console.log("frequencyMap before reduce", freqArr);
-        //Convert from Array to HashMap structure
-      let freqMap = freqArr.reduce(function (map, obj) {
-                obj[insideReachKey] = {};
-                map[obj[key]] = obj;
-                return map;
-            }, {});
+        console.log("timeGapKey ", timeGapKey);
+        //Calculating probability and count if each entry
+        let freqArr = this.findCountAndProbability(sorted, key);
 
-//        console.log("frequencyMap after reduce", freqMap);
+        //Mapping to hashmap structure, adding another empty array as variable.
+        let freqMap = freqArr.reduce(function (map, obj) {
+            obj[insideReachKey] = {};
+            map[obj[key]] = obj;
+            return map;
+        }, {});
 
+
+        //populate the hashmap with only entries inside the reach
         for (let j = 0; j < sorted.length; j++) {
             j = parseInt(j);
             let entry = sorted[j];
@@ -143,24 +271,40 @@ export default class Analytics {
                     let innerEntry = sorted[jj];
                     let innerKey = innerEntry[key];
                     cumulativeGap += innerEntry[timeGapKey];
-                    if (cumulativeGap - reach < 1) {
+
+                    let diffReachCum = (reach - cumulativeGap);
+
+                    if (diffReachCum > 1) {
+                        //    console.log("cumativeGap ", cumulativeGap);
+                        //   console.log("reach ", reach);
+
+
+                        let cDuration = innerEntry[end] - innerEntry[start];
+
                         let dependencies = freqMap[entry[key]][insideReachKey];
 
                         let dependent = dependencies[innerKey];
                         let toBehashed = {
                             [key]: innerKey,
-                            [dependencyCount]: 1
+                            [dependencyCount]: 1,
+                            [totalTimeSpan]: cDuration
+
                         };
 
                         if (dependent) {
                             let count = dependent[dependencyCount] + 1;
                             toBehashed[dependencyCount] = count;
+                            toBehashed[totalTimeSpan] = toBehashed[totalTimeSpan] + cDuration;
+
+
                         }
-                        //      console.log("dependent found, value ", toBehashed);
+
                         freqMap[entry[key]][insideReachKey][innerKey] = toBehashed;
 
                     }
+
                 } catch (e) {
+                    console.log("error");
                     console.error("key ", (key));
                     console.error("Exception ", e);
                     console.error("freqMap entry ", entry);
@@ -168,42 +312,50 @@ export default class Analytics {
             }
         }
 
+        console.log("FreqMap", freqMap);
+
         let frequencies = [];
         let index = 0;
         for (let item in freqMap) {
             let total = 0;
+            let ctotDuration = 0;
             let depArr = freqMap[item][insideReachKey];
 
+
+            //Summing up total count
             for (let dep in depArr) {
-                let count = depArr[dep][dependencyCount]
+                let count = depArr[dep][dependencyCount];
+
                 total = total + count;
             }
-            
-            var depString = "";
-            for (let dep in depArr) {
-                let count = depArr[dep][dependencyCount]
-                
-           
-                depArr[dep][probability_key] = (count / total).toFixed(2);
-                depString += dep + " (" + (depArr[dep][probability_key] * 100) + "%)" + ", ";
 
+            //summing up total duration and probability
+            var depString = "";
+            let cWeight = 0;
+            for (let dep in depArr) {
+                ctotDuration = ctotDuration + depArr[dep][totalTimeSpan];
+                let count = depArr[dep][dependencyCount]
+                depArr[dep][probability_key] = Number.parseFloat(count / total).toPrecision(2); //(count / total).toFixed(2);
+                depString += dep + " (" + ((depArr[dep][probability_key] * 100)).toFixed(2) + "%)" + ", ";
+                cWeight = cWeight + (depArr[dep][totalTimeSpan] * depArr[dep][probability_key]);
             }
-           
+
             freqMap[item][depdendency_key] = depString;
+            freqMap[item][totalDependencyTime] = ctotDuration;
+            //freqMap[item][weight_key] = Number.parseFloat(cWeight).toPrecision(2);
+            freqMap[item][weight_key] = cWeight;
             frequencies[index++] = freqMap[item];
         }
 
-        
-
         return frequencies;
- 
+
     }
 
     static findCombination(data, key) {
         let dataSet = data.map(entry => entry.reason);
-        
+
         let combination = ss.combinations(dataSet, 2);
-        
+
 
         let combData = combination.map(entry => {
             let freq = entry[0] + "=>" + entry[1];
@@ -215,8 +367,8 @@ export default class Analytics {
 
         }
         );
-        var freq = this.findFrequency(combData, "frequencyKey");
-        console.log("frequency of combination", freq);
+        var freq = this.findCountAndProbability(combData, "frequencyKey");
+
 
         return freq;
     }

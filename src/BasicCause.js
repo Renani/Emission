@@ -19,11 +19,8 @@ class BasicCause extends Component {
             data = this.props.data;
 
         }
-
-        console.log("running Constructor", data);
-        const hour =  3600000;
-        const reach = 3600000*24*3;
-        data =  Analytics.findlikeliestCause(data, reach,"reason");
+ 
+        data =  Analytics.findlikeliestCause(data, this.props.reach,"reason");
         this.state = { data: data };
 
 

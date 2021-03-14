@@ -6,14 +6,17 @@ import { scaleBand, scaleLinear } from 'd3-scale';
 import { axisBottom, axisLeft, axisRight } from 'd3-axis';
 import { extent, max, min, range } from "d3-array";
 import { line } from "d3-shape"
+import ColorGradient from "./color-gradient";
 
 class ParetoDragram extends Component {
     constructor(props) {
         super(props)
         this.createHistogram = this.createHistogram.bind(this)
         this.createlineGraph = this.createlineGraph.bind(this)
-        let data = Analytics.findFrequency(this.props.data, "reason");
-        console.log("Data", this.props.data);
+        
+
+        let data = Analytics.findCountAndProbability(this.props.data, "reason");
+
         let graphData = Analytics.findLongest(this.props.data, false);
 
         console.log("graphData", graphData);
@@ -40,18 +43,25 @@ class ParetoDragram extends Component {
 
 
         let probab = Analytics.findlikeliestCause(JSON.parse(JSON.stringify(this.props.data)), this.props.reach, "reason");
+        console.log("prob array ", probab);
+
+        let frequencyPerPeriod = Analytics.findFrequencyPerPeriod(this.props.data, (d)=>d.Start, this.props.reach, (d)=>d.Reason);
+        console.log("frequencyPerPeriod", frequencyPerPeriod);
 
         for (let d in data) {
             let key = data[d]["reason"];
             let duration = totalDurations[key];
             data[d]["TotalDuration"] = duration["TotalDuration"] / (1000);
-
+            //  let dependent = probab[key]["_innerReach"];
+            let rootCause= probab.find(el=>el["reason"]===key);
+            data[d]["totalDependencyTime"] = rootCause["totalDependencyTime"];
+            data[d]["weight"] = rootCause["weight"];
 
         }
 
         let sorted = Analytics.sortData(data, "TotalDuration", Analytics.sortDirection.Desc);
         console.log("Probability ", probab);
-        console.log("Sorted", sorted);
+        console.log("Final data ", data);
 
 
         this.state = { data: data, graphData: sorted, dataProbabilty: probab };
@@ -77,7 +87,6 @@ class ParetoDragram extends Component {
         const height = this.props.height;
         const width = this.props.width;
         const key = "reason";
-        const durationKey = "TotalDuration";
         const barWidth = 50;
         const insideReachKey = "_insideReach";
         //Creating Axis
@@ -106,13 +115,17 @@ class ParetoDragram extends Component {
 
         //Main
 
-
+        let maxTotalTime = max(this.state.data, d=>d.weight);
+        let gradColorStart = {red:0, green:0,blue:150 };
+        let gradColorEnd = {red:200,green:0, blue:0};
+        
+        
         let svg = select(this.node);
 
 
         svg.append("g")
             .attr("class", "bars")
-            .attr("fill", "steelblue")
+           
             .selectAll("rect")
             .data(this.state.data)
             .join("rect")
@@ -122,6 +135,9 @@ class ParetoDragram extends Component {
                 let calcHeight = y(0) - y(d.count);
                 return calcHeight;
             })
+            .attr("fill",  (d)=>{ 
+               
+                 return ColorGradient (Number.parseFloat(d.weight/maxTotalTime).toPrecision(2), gradColorStart,gradColorEnd)})
 
             .attr("width", currentBarWidth);
 
@@ -132,45 +148,20 @@ class ParetoDragram extends Component {
             .style("text-anchor", "end")
             .attr("dx", "-2em")
             .attr("dy", "-1.5em")
-            .attr("font-size", "14px")
+            .attr("font-size", "1.4em")
+            .attr("font-family", 'Times New Roman')
             .attr("transform", function (d) {
                 return "rotate(-45)"
             });
 
         svg.append("g")
             .attr("class", "y-axis")
-            .call(yAxis);
+            .call(yAxis)
+            .attr("font-size", "1.4em")
+            .attr("font-family", 'Times New Roman');
 
         this.createlineGraph(x, currentBarWidth);
-
-        let linearDomainScale = [0, max(this.state.dataProbabilty, (d) => {
-            //calculate dependencies over a limit
-            let dependent = d[insideReachKey];
-            return d.count//ignore
-        })];
-        let xLin = scaleLinear()
-            .domain(this.state.data.map(d => d.reason))
-            .range(rangeXScale);
-
-
-
-        let first = this.state.data[0];
-        svg.append("linearGradient")
-            .attr("id", "bar-gradient")
-            .attr("gradientUnits", "userSpaceOnUse")
-            .attr("x1", x(first[key]))
-            .attr("y1", 0)
-            .attr("x2", 10)
-            .attr("y2", 0)
-            .selectAll("stop")
-            .data([
-                { offset: "0%", color: "blue" },
-                { offset: "100%", color: "red" }
-            ])
-            .enter().append("stop")
-            .attr("offset", function (d) { return d.offset; })
-            .attr("stop-color", function (d) { return d.color; });
-
+        
     }
 
 
@@ -195,7 +186,9 @@ class ParetoDragram extends Component {
         let yRightAxis = g => g.attr("transform", 'translate(' + 0 + ',0)').call(axisRight(yGraphy)).call(g => g.select(".domain").remove());
 
         svg.append("g")
-            .attr("class", "y-axis")
+            .attr("class", "y-axisLinear")
+            .attr("font-size", "1.5em")
+            .attr("font-family", 'Times New Roman')
             .call(yRightAxis);
 
         svg.append("linearGradient")
@@ -232,15 +225,16 @@ class ParetoDragram extends Component {
             .attr("stroke", "url(#line-gradient)")
             .attr("r", 10)
             .attr("cx", function (d) { let posx = x(d[key]) + currentBarWidth / 2;; return posx })
-            .attr("cy", function (d) { return yGraphy(d[durationKey]) });
+            .attr("cy", function (d) { return yGraphy(d[durationKey]) })
+            .on("click", this.props.onClick);
     }
 
-
-
+               
+    
 
     render() {
         return <svg ref={node => this.node = node}
-            width={this.props.width} height={this.props.height}>
+            width={this.props.width} height={this.props.height}  viewBox="0 0 1000 1000">
             yoho
         </svg>
 
