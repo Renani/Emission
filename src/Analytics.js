@@ -135,9 +135,9 @@ export default class Analytics {
                 if(existing){
                     existing.count +=1;
           //          console.log("currentValues ", [currentValue.probability, groupByPeriod.entries.length, existing.cumulativeFrequency]);
-                    existing.AverrageFrequency +=(currentValue.probability/groupByPeriod.entries.length);
+                    existing.AverageFrequency +=(currentValue.probability/groupByPeriod.entries.length);
                 }else{
-                    avgFrequencyPerCategory[objKey] ={AverrageFrequency: currentValue.probability/groupByPeriod.entries.length, count:1}
+                    avgFrequencyPerCategory[objKey] ={AverageFrequency: currentValue.probability/groupByPeriod.entries.length, count:1}
                 }
             }
 
@@ -149,7 +149,7 @@ export default class Analytics {
         console.log("cumulatives ", avgFrequencyPerCategory);
         console.log("sorted after reduce ", sorted);
         console.log("groupByPeriod after reduce ", groupByPeriod);
-        return avgFrequencyPerCategory;
+        return [avgFrequencyPerCategory, (d)=>d.AverageFrequency, "AverageFrequency"];
     }
 
     /**
@@ -158,14 +158,14 @@ export default class Analytics {
      * @param {boolean} pretty 
      * @returns {_timeSpan:end-start}
      */
-    static findLongest(data, pretty) {
-        let start = "start";
-        let end = "end";
-
+    static findLongest(data, getStartTime, getEndTime, pretty) {
+      
+        console.log ("inputs ", [getStartTime, getEndTime]);
         let newSet = [];
         for (let index in data) {
             let entry = data[index];
-            let timeSpan = (entry[end] - entry[start]);
+            let timeSpan = parseInt((getEndTime(entry) - getStartTime(entry)));
+            console.log("timeSpan ", [timeSpan, getEndTime(entry), getStartTime(entry), entry]);
             let newEntry = JSON.parse(JSON.stringify(entry));
             if (pretty) {
                 let seconds = parseInt((timeSpan / 1000) % 60);
@@ -177,21 +177,9 @@ export default class Analytics {
             newEntry["_timeSpan"] = timeSpan;
             newSet.push(newEntry);
         }
-        /*
+      
 
-        let newSet = data.map(entry => {
-            let timeSpan = (entry[end] - entry[start]);
-            if (pretty) {
-                let seconds = parseInt((timeSpan / 1000) % 60);
-                let minutes = Math.floor((timeSpan / (1000 * 60)) % 60);
-                let hours = Math.floor((timeSpan / (1000 * 60 * 60)) % 60);
-                let days = Math.floor((timeSpan / (1000 * 60 * 60 * 24)) % 24);
-                entry["Duration"] = days + "d, " + hours + "h, " + minutes + "m and " + seconds + "s";
-            }
-            entry["_timeSpan"] = timeSpan;
-            return entry;
-        });
-        */
+       
         console.log("newSet ", newSet);
         return newSet;
     }
