@@ -13,6 +13,11 @@
   }
 }
 
+ .pusher{
+	 width:1000px;
+	 overflow-x: auto;
+	 overflow-y: auto;
+ }
 .App-header {
   background-color: #282c34;
   min-height: 25vh;
@@ -24,9 +29,7 @@
   color: white;
 }
 
-.container{
-	overflow-y: auto;
-}
+ 
 .App-link {
   color: #61dafb;
 }

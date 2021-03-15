@@ -83,7 +83,7 @@ class App extends React.Component {
          
         console.log("item clicked on ", [i, self])
       }
-      content = <Container><ParetoDragiam data={emissionData.emissionData} margin={{ top: 50, right: 0, bottom: 150, left: 150 }} width={1000} height={1000} reach={reach} onClick={handleMouseOver2}></ParetoDragiam></Container>
+      content = <Container><ParetoDragiam data={emissionData.emissionData} margin={{ top: 50, right: 0, bottom: 150, left: 150 }} width={800} height={800} reach={reach} onClick={handleMouseOver2}></ParetoDragiam></Container>
       if (this.state.drillDown) {
 
        // contentDrillDown = <PrettyPrintJson data={this.state.drillDown}></PrettyPrintJson>
@@ -124,7 +124,7 @@ class App extends React.Component {
                 as={Menu}
                 animation='slide out'
                 icon='labeled'
-                width="wide"
+                width="narrow"
                 vertical
                 inverted
                 visible={this.state.sidebarButtonToggleState}>
@@ -186,7 +186,7 @@ class App extends React.Component {
               </Sidebar>
 
               <Sidebar.Pusher className="pusher">
-                <Segment basic style={{ minHeight: 200, maxheight: 500 }}>
+                <Segment basic style={{ minHeight: 500, maxheight: 1000, minwidth:2000 }}>
 
 
                   <div className='App-body'>
