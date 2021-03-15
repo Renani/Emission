@@ -34,7 +34,7 @@ class LongestEntry extends Component {
         return (
             <Container>
                 <Container> Nr of rows {this.state.data.length} </Container>
-                <DataTable data={this.state.data} titles={["StartDate", "endDate", "Reason","Duration"]}>></DataTable>
+                <DataTable data={this.state.data} titles={["StartDate", "endDate", "Reason","Duration"]}></DataTable>
             </Container>
 
         )
