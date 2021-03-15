@@ -114,7 +114,7 @@ export default class Analytics {
 
         }, { cumulativeGap: 0, periodCounter: 0, entries: [] });
         
-        console.log("groupByPeriod ", groupByPeriod);
+        
         let avgFrequencyPerCategory ={}
         for (let index in groupByPeriod.entries){
              
@@ -143,12 +143,8 @@ export default class Analytics {
 
 
         }
-
-        //group the average frequency per period now that you know the count for each period
-          
-        console.log("cumulatives ", avgFrequencyPerCategory);
-        console.log("sorted after reduce ", sorted);
-        console.log("groupByPeriod after reduce ", groupByPeriod);
+     
+        
         return [avgFrequencyPerCategory, (d)=>d.AverageFrequency, "AverageFrequency"];
     }
 
@@ -160,12 +156,12 @@ export default class Analytics {
      */
     static findLongest(data, getStartTime, getEndTime, pretty) {
       
-        console.log ("inputs ", [getStartTime, getEndTime]);
+        
         let newSet = [];
         for (let index in data) {
             let entry = data[index];
             let timeSpan = parseInt((getEndTime(entry) - getStartTime(entry)));
-            console.log("timeSpan ", [timeSpan, getEndTime(entry), getStartTime(entry), entry]);
+
             let newEntry = JSON.parse(JSON.stringify(entry));
             if (pretty) {
                 let seconds = parseInt((timeSpan / 1000) % 60);
@@ -186,8 +182,7 @@ export default class Analytics {
 
     static calculateTimeGapBetween(data, dataCallBack) {
         const timeGapKey = 'timeGap';
-         console.log("calculateTimeGapBetween ", data);
-        console.log("calculateTimeGapBetween func ", dataCallBack(data[0]));
+ 
 
 
         for (let index in data) {
@@ -233,7 +228,7 @@ export default class Analytics {
 
 
         //Calculating distance [insert ]
-        const timeGapKey = Analytics.calculateTimeGapBetween(sorted, (d) => { console.log("getting data function has been  called"); return d[start] });
+        const timeGapKey = Analytics.calculateTimeGapBetween(sorted, (d) => { return d[start] });
 
         console.log("timeGapKey ", timeGapKey);
         //Calculating probability and count if each entry

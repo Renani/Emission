@@ -24,6 +24,9 @@
   color: white;
 }
 
+.container{
+	overflow-y: auto;
+}
 .App-link {
   color: #61dafb;
 }

@@ -23,6 +23,7 @@ class LongestEntry extends Component {
         console.log("data longest ", data);
         data =Analytics.findLongest(this.props.data,(d)=>d.Start, (d)=>d.End, true);
         
+        
         this.state = { data: data };
 
 
@@ -33,7 +34,7 @@ class LongestEntry extends Component {
         return (
             <Container>
                 <Container> Nr of rows {this.state.data.length} </Container>
-                <DataTable data={this.state.data}></DataTable>
+                <DataTable data={this.state.data} titles={["StartDate", "endDate", "Reason","Duration"]}>></DataTable>
             </Container>
 
         )

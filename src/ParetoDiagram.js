@@ -13,11 +13,11 @@ class ParetoDragram extends Component {
         super(props)
         this.createHistogram = this.createHistogram.bind(this)
         this.createlineGraph = this.createlineGraph.bind(this)
-        
+
 
         let data = Analytics.findCountAndProbability(this.props.data, "reason");
 
-        let graphData = Analytics.findLongest(this.props.data,(d)=>d.start, (d)=>d.end, false);
+        let graphData = Analytics.findLongest(this.props.data, (d) => d.start, (d) => d.end, false);
 
         console.log("graphData", graphData);
         //sum up timespan and  group them
@@ -28,19 +28,19 @@ class ParetoDragram extends Component {
             let sum = obj["_timeSpan"];
             if (existing) {
                 sum = existing['TotalDuration'];
-                console.log("Increasing sum " + existing["reason"], [sum, obj["_timeSpan"]/1000]);
-                sum += obj["_timeSpan"];
                 
+                sum += obj["_timeSpan"];
+
 
             } else {
                 existing = obj;
-                
+
             }
-            
+
             existing["TotalDuration"] = sum;
             map[existing["reason"]] = existing;
             return map;
-        },{});
+        }, {});
 
 
 
@@ -48,25 +48,45 @@ class ParetoDragram extends Component {
         let probab = Analytics.findlikeliestCause(JSON.parse(JSON.stringify(this.props.data)), this.props.reach, "reason");
         console.log("prob array ", probab);
 
-        let frequencyOut = Analytics.findFrequencyPerPeriod(this.props.data, (d)=>d.start, this.props.reach, (d)=>d.reason);
+        let frequencyOut = Analytics.findFrequencyPerPeriod(this.props.data, (d) => d.start, this.props.reach, (d) => d.reason);
         let frequencyPerPeriod = frequencyOut[0]
         let getFrequency = frequencyOut[1];
         let frequency_key = frequencyOut[2];
         console.log("frequencyPerPeriod", frequencyPerPeriod);
-
+        let totalTime =0;
         for (let d in data) {
             let key = data[d]["reason"];
             let duration = totalDurations[key];
             data[d]["TotalDuration"] = duration["TotalDuration"] / 1000;
+            totalTime += duration["TotalDuration"];
             //  let dependent = probab[key]["_innerReach"];
-            let rootCause= probab.find(el=>el["reason"]===key);
+            let rootCause = probab.find(el => el["reason"] === key);
             data[d]["totalDependencyTime"] = rootCause["totalDependencyTime"];
-            data[d]["weight"] = rootCause["weight"];
-            data[d][frequency_key] = getFrequency(frequencyPerPeriod[key]);
+            
 
+            data[d]["weight"] = rootCause["weight"];
+            let depdendentsObject = rootCause["_insideReach"];
+            let dependent=[];
+            let depIndex=0;
+            
+            for(let item in depdendentsObject){
+                
+                dependent[depIndex++]=depdendentsObject[item];
+            }
+            
+            data[d]["dependents"]  =dependent;
+            data[d][frequency_key] = Number.parseFloat(getFrequency(frequencyPerPeriod[key])).toPrecision(2);
         }
+        
         console.log("frequency key ", frequency_key)
-        let sorted =  Analytics.sortData(data, frequency_key, Analytics.sortDirection.Desc);
+        let sorted = Analytics.sortData(data, "TotalDuration", Analytics.sortDirection.asc);
+
+        let cumulativeDuration =0;
+        for(let item in sorted ){
+            cumulativeDuration += sorted[item] ["TotalDuration"]/(totalTime/1000);
+            sorted[item]["lineGraph"] =  cumulativeDuration;
+        
+        }
 
         //let sorted = data.sort((a,b) =>{ console.log(" sort algorithm", frequency_key); return a[frequency_key] < b[frequency_key];});
         console.log("Probability ", probab);
@@ -74,7 +94,7 @@ class ParetoDragram extends Component {
         console.log("Final data ", data);
 
 
-        this.state = { data: sorted  ,  getAverageFrequency:(d)=>d[frequency_key] };
+        this.state = { data: sorted, getAverageFrequency: (d) => Number.parseFloat(d["lineGraph"]).toPrecision(2) };
     }
 
 
@@ -125,17 +145,17 @@ class ParetoDragram extends Component {
 
         //Main
 
-        let maxTotalTime = max(this.state.data, d=>d.weight);
-        let gradColorStart = {red:0, green:0,blue:150 };
-        let gradColorEnd = {red:200,green:0, blue:0};
-        
-        
+        let maxTotalTime = max(this.state.data, d => d.weight);
+        let gradColorStart = { red: 0, green: 0, blue: 150 };
+        let gradColorEnd = { red: 200, green: 0, blue: 0 };
+
+
         let svg = select(this.node);
 
 
         svg.append("g")
             .attr("class", "bars")
-           
+
             .selectAll("rect")
             .data(this.state.data)
             .join("rect")
@@ -145,9 +165,10 @@ class ParetoDragram extends Component {
                 let calcHeight = y(0) - y(d.TotalDuration);
                 return calcHeight;
             })
-            .attr("fill",  (d)=>{ 
-               
-                 return ColorGradient (Number.parseFloat(d.weight/maxTotalTime).toPrecision(2), gradColorStart,gradColorEnd)})
+            .attr("fill", (d) => {
+
+                return ColorGradient(Number.parseFloat(d.weight / maxTotalTime).toPrecision(2), gradColorStart, gradColorEnd)
+            })
 
             .attr("width", currentBarWidth);
 
@@ -156,12 +177,12 @@ class ParetoDragram extends Component {
             .call(xAxis)
             .selectAll("text")
             .style("text-anchor", "end")
-            .attr("dx", "-2em")
-            .attr("dy", "-1.5em")
+            .attr("dx", "-1.5em")
+            .attr("dy", "-1.2em")
             .attr("font-size", "1.4em")
             .attr("font-family", 'Times New Roman')
             .attr("transform", function (d) {
-                return "rotate(-45)"
+                return "rotate(-65)"
             });
 
         svg.append("g")
@@ -170,16 +191,18 @@ class ParetoDragram extends Component {
             .attr("font-size", "1.4em")
             .attr("font-family", 'Times New Roman');
 
-            svg.append("text")
+        svg.append("text")
             .attr("transform", "rotate(-90)")
-            .attr("y", 0 - margin.left)
-            .attr("x",0 - (height / 2))
+            .attr("y", margin.left / 2)
+            .attr("x", 0 - (height / 2))
             .attr("dy", "1em")
             .style("text-anchor", "middle")
-            .text("Duration");      
+            .attr("font-size", "1.4em")
+            .attr("font-family", 'Times New Roman')
+            .text("Duration(Seconds)");
 
         this.createlineGraph(x, currentBarWidth);
-        
+
     }
 
 
@@ -194,7 +217,7 @@ class ParetoDragram extends Component {
 
         let svg = select(this.node);
 
-        let graphDomain = [0, max(this.state.data,(d)=> getAverageFrequency(d))];
+        let graphDomain = [0, max(this.state.data, (d) => getAverageFrequency(d))];
         let graphRange = [height - margin.bottom, margin.top];
 
         //   let graphRange = rangeScale;
@@ -203,12 +226,12 @@ class ParetoDragram extends Component {
         let yGraphy = scaleLinear().domain(graphDomain).range(graphRange);
 
         let yRightAxis = g => g.attr("transform", 'translate(' + 0 + ',0)').call(axisRight(yGraphy)).call(g => g.select(".domain").remove());
-
-        svg.append("g")
-            .attr("class", "y-axisLinear")
-            .attr("font-size", "1.5em")
-            .attr("font-family", 'Times New Roman')
-            .call(yRightAxis);
+        /*
+                    svg.append("g")
+                        .attr("class", "y-axisLinear")
+                        .attr("font-size", "1.5em")
+                        .attr("font-family", 'Times New Roman')
+                        .call(yRightAxis); */
 
         svg.append("linearGradient")
             .attr("id", "line-gradient")
@@ -231,7 +254,7 @@ class ParetoDragram extends Component {
         svg.append("path")
             .datum(this.state.data)
             .attr("fill", "none")
-            .attr("stroke", "url(#line-gradient)")
+            .attr("stroke", "black")
             .attr("stroke-width", 3)
             .attr("d", line()
                 .x(function (d) { let posx = x(d[key]) + currentBarWidth / 2; return posx })
@@ -240,20 +263,31 @@ class ParetoDragram extends Component {
 
         svg.append("g").selectAll("circle")
             .data(this.state.data).join("circle")
-            .attr("fill", "url(#line-gradient)")
-            .attr("stroke", "url(#line-gradient)")
+            .attr("fill", "blue)")
+            .attr("stroke", "yellow")
             .attr("r", 10)
-            .attr("cx", function (d) { let posx = x(d[key]) + currentBarWidth / 2;; return posx })
+            .attr("cx", function (d) { let posx = x(d[key]) + currentBarWidth / 2; return posx })
             .attr("cy", function (d) { return yGraphy(getAverageFrequency(d)) })
             .on("click", this.props.onClick);
+
+        svg.selectAll("text.graph")
+            .data(this.state.data)
+            .enter()
+            .append("text")
+            .attr("x", function (d) { let posx = x(d[key]) + currentBarWidth / 2; return posx })
+            .attr("y", function (d) { return (yGraphy(getAverageFrequency(d))-40) })
+            .attr("dy", "1em")
+            .attr("font-size", "1.4em")
+            .attr("font-family", 'Times New Roman')
+            .text((d)=>getAverageFrequency(d));
     }
 
-               
-    
+
+
 
     render() {
         return <svg ref={node => this.node = node}
-            width={this.props.width} height={this.props.height}  viewBox="0 0 1000 1000">
+            width={this.props.width} height={this.props.height} viewBox="0 0 1000 1000">
             yoho
         </svg>
 

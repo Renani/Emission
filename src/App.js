@@ -23,6 +23,10 @@ import ParetoDragiam from './ParetoDiagram';
 import { Period } from './Period.js';
 import Analytics from './Analytics';
 import Longest from './longest';
+import PrettyPrintJson from './PrettyJson'
+import BarchartAnimated from './BarchartAnimated';
+import { unmountComponentAtNode, render } from "react-dom";
+
 
 class App extends React.Component {
 
@@ -33,7 +37,7 @@ class App extends React.Component {
 
     var data = emissionData.emissionData;
 
-    this.state = { activeItem: {}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data), chosenSelection: undefined };
+    this.state = { activeItem: {}, sidebarButtonToggleState: true, data: BeautifyData.addDateTimeFromMillis(data), chosenSelection: undefined, drillDown: undefined };
 
   }
 
@@ -44,8 +48,14 @@ class App extends React.Component {
 
 
   render() {
+
+    
     const { activeItem } = this.state;
     let content = <Container>Nothing selected yet</Container>;
+    let contentDrillDown = <Container>Nothing selected yet</Container>;
+    
+    console.log("content before assigning!", [content, contentDrillDown]);
+
 
     const reach = Period.Day * 3; //setting rootcause to be calculcated based on 3 days
 
@@ -58,23 +68,45 @@ class App extends React.Component {
     else if (activeItem === ViewConfig.WorldMap) {
       content = <WorldMap></WorldMap>
     } else if (activeItem === ViewConfig.DataTable) {
-      content = <DataTable data={this.state.data}></DataTable>
+      content = <DataTable data={this.state.data} ></DataTable>
     } else if (activeItem === ViewConfig.probability) {
       content = <SimpleProbability   ></SimpleProbability>
     } else if (activeItem === ViewConfig.combination) {
       content = <Combination></Combination>
     } else if (activeItem === ViewConfig.basicCause) {
-      content = <BasicCause reach={reach}></BasicCause>
+      content = <BasicCause  reach={reach}></BasicCause>
     } else if (activeItem === ViewConfig.ParetoDiagram) {
       const self = this;
       function handleMouseOver2(d, i) {  // Add interactivity
 
-        self.setState(i);
-     
+        self.setState({ drillDown: i });
+         
+        console.log("item clicked on ", [i, self])
       }
       content = <Container><ParetoDragiam data={emissionData.emissionData} margin={{ top: 50, right: 0, bottom: 150, left: 150 }} width={1000} height={1000} reach={reach} onClick={handleMouseOver2}></ParetoDragiam></Container>
-    }else if (activeItem === ViewConfig.LongestEntry){
+      if (this.state.drillDown) {
+
+       // contentDrillDown = <PrettyPrintJson data={this.state.drillDown}></PrettyPrintJson>
+       console.log("DrillDown ",this.state.drillDown);
+       contentDrillDown = <div> <BarchartAnimated data={this.state.drillDown.dependents} key={this.state.drillDown["reason"]+1} getXValue={(d) => d["reason"]} getYValue={(d)=>d.totalTimespan/1000}  margin={{ top: 50, right: 0, bottom: 100, left: 150 }} width={500} height={600}  title ={"Drilldown to "+ this.state.drillDown["reason"]}></BarchartAnimated>
+                                <BarchartAnimated data={this.state.drillDown.dependents} key={this.state.drillDown["reason"]+2} getXValue={(d) => d["reason"]} getYValue={(d)=>d.probability}  margin={{ top: 50, right: 0, bottom: 100, left: 150 }} width={500} height={600}  title =""></BarchartAnimated>
+                            </div>
+      }
+    } else if (activeItem === ViewConfig.LongestEntry) {
       content = <Longest data={this.state.data}></Longest>
+    } else if (activeItem == ViewConfig.FrequencyWeek) {
+      let findOutput = Analytics.findFrequencyPerPeriod(this.state.data, (d) => d.Start, Period.Day * 7, (d) => d.Reason);
+      let dataSet = findOutput[0];
+      let arr = [];
+      let index=0;
+      for (let item in dataSet){
+        arr[index]=dataSet[item];
+        arr[index]["category"] = item;
+        index++;
+        
+      }
+      console.log("arr ", arr);
+      content = <BarchartAnimated data={arr} getXValue={(d) => d["category"]} getYValue={findOutput[1]}  margin={{ top: 50, right: 0, bottom: 200, left: 150 }} width={1000} height={1000}  title ={"Average frequency per week"}></BarchartAnimated>
     }
 
 
@@ -145,7 +177,11 @@ class App extends React.Component {
                     active={activeItem === ViewConfig.ParetoDiagram}
                     onClick={this.handleItemClick}
                   />
-
+                  <Menu.Item
+                    name='FrequencyWeek'
+                    active={activeItem === ViewConfig.FrequencyWeek}
+                    onClick={this.handleItemClick}
+                  />
                 </Menu>
               </Sidebar>
 
@@ -161,7 +197,10 @@ class App extends React.Component {
             </Sidebar.Pushable>
           </Grid.Column>
           <Grid.Column>
-            <Container>hallais</Container>
+            <div>
+
+            </div>
+            <Container>{contentDrillDown}</Container>
           </Grid.Column>
         </Grid>
       </div>

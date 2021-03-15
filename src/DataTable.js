@@ -13,7 +13,7 @@ class DataTable extends Component {
         this.getSortDirection = this.getSortDirection.bind(this);
         this.setSortDirection = this.setSortDirection.bind(this);
 
-        console.log("running Constructor");
+        console.log("running Constructor", this.props);
         var data = {};
         if (!this.props.data) {
             console.error("No data in props ", props);
@@ -47,10 +47,13 @@ class DataTable extends Component {
         var table = select(node).append('table');
         console.log("state data at createTable ", this.state)
 
-        var titles = Object.keys(this.state.data[0]).filter(entry => 
-            !entry.startsWith("_")
-                
-        );
+        var titles = this.props.titles;
+        if (!titles) {
+            titles = Object.keys(this.state.data[0]).filter(entry =>
+                !entry.startsWith("_")
+
+            );
+        }
         console.log("Row Headers obtained from data", titles)
 
 
@@ -68,10 +71,6 @@ class DataTable extends Component {
                 headers.attr('class', 'header');
 
                 var rows = select(this.node).selectAll("tbody tr");
-                console.log("rows", rows);
-                console.log("d parameter", d);
-                console.log("i param", i);
-
 
                 if (sortAcending) {
 
@@ -103,7 +102,7 @@ class DataTable extends Component {
                 return d.value;
             });
 
-        this.setState({ rows: rows });
+
 
     }
 
@@ -114,14 +113,14 @@ class DataTable extends Component {
 
     }
     componentDidUpdate() {
-
+        //  this.createDataTable();
     }
 
 
     render() {
 
         return (
-            <div id="page-wrap" ref={node => this.node = node}>  </div>
+            <div id="page-wrap" ref={node => this.node = node} >  </div>
         )
     }
 };

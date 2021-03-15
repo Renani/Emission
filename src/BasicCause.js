@@ -31,7 +31,7 @@ class BasicCause extends Component {
         return (
             <Container>
                 <Container> Nr of rows {this.state.data.length} </Container>
-                <DataTable data={this.state.data}></DataTable>
+                <DataTable data={this.state.data} titles={["reason","probability", "Dependencies"]}></DataTable>
             </Container>
 
         )

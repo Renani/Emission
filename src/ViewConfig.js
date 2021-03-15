@@ -7,5 +7,6 @@ export const ViewConfig={
     combination:'Combination',
     LongestEntry:"LongestEntry",
     basicCause:"basicCause",
-    ParetoDiagram:"ParetoDiagram"
+    ParetoDiagram:"ParetoDiagram",
+    FrequencyWeek:"FrequencyWeek"
 }
